@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="robots" content="noindex, nofollow" />
-<title>DPG Masterplan Checker</title>
-<script type="text/javascript" src="https://ff.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=jNkb25cxQA0xnnVjZA2HnukglERagcf-hJt_F_kPrb2FH5WLqF0ofS9I8T9MiUi4uujS9W5BcQIlqkh0HupELZbGhpDPBOVGQ-AH0CfRngkVt29qq6J3e-ppcwtQxbge1Mpkc3r66-0Y_ZfM6ck9iv6qNahgWAT2zFfS_XUddq9LDBFk8UT0XdB46oMuScYkhQUlZ4jNBZ783mz5XxCiz4zSprGnHB6revzo8g5nRFN5xlTVEy9WnB7fUklYtLU_ZsATq2jt4LGe8GWJ-TeQ7g" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://ff.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jaGF0Z3B0LmNvbS9iYWNrZW5kLWFwaS9lc3R1YXJ5L2NvbnRlbnQ_aWQ9ZmlsZV8wMDAwMDAwMGVmYmM4MWY0OTEzMGM4Yjg2MjExZWM2ZSZ0cz00OTY5NjMmcD1mcyZjaWQ9MSZzaWc9ZjhjN2U5MmYwMzdjYTMzYTZiY2Y4ZWEyZGMyYTI1MDNlMTExNTRmMTg4N2FlMTJjZWY0ZGU5MGIyYmZlZTYwMCZ2PTA"/><style>
+<title>DPG Masterplan Checker v13</title>
+<style>
 /*
  * Палитра и раскладка взяты у прежнего инструмента 3D-отдела (SVG MP Viewer):
  * checker его заменяет, и переучивать отдел на другой интерфейс незачем.
@@ -225,8 +224,27 @@ body.overlays-hidden #maskLayer,body.overlays-hidden #labelLayer,body.overlays-h
 .brand svg { display:block; width:105px; height:50px; }
 @media(max-width:600px) { .viewer-col { top:0; } .brand svg { width:74px; height:auto; } }
 </style>
+<style>
+/* v12: scoped controls must not inherit the upload-button label layout. */
+#tilesDropzone .numbered-options { display:grid; grid-template-columns:minmax(0,1fr); gap:6px; margin-top:14px; min-width:0; }
+#tilesDropzone .numbered-options label { display:block; min-height:0; margin:0; text-align:left; font-size:12px; font-weight:500; line-height:1.4; }
+#numberedGrid { display:block; width:100%; min-width:0; max-width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); color:var(--text); font:inherit; font-size:12px; color-scheme:dark; }
+#tilesDropzone .numbered-options small { margin:0; font-size:11px; line-height:1.45; }
+#tilesMeta { white-space:pre-line; overflow-wrap:anywhere; }
+</style>
+<style>
+/* v13: mobile viewport and touch targets. */
+.viewport { -webkit-user-select:none; -webkit-touch-callout:none; overscroll-behavior:contain; }
+@supports(height:100dvh) { html,body,.app { height:100dvh; } }
+@media(pointer:coarse) {
+ .map-button { width:48px; height:48px; background:#202020cc; }
+ input[type="number"],input[type="search"],select { font-size:16px!important; }
+ .section-tabs { min-width:0; }
+}
+</style>
 </head>
 <body>
+<noscript><div style="position:fixed;inset:0;z-index:100;background:#171c22;color:white;padding:30px">Для работы Checker нужен JavaScript. Откройте страницу в браузере; просмотр вложения может не запускать приложение.</div></noscript>
 <div class="app" id="appRoot">
   <aside class="panel left">
     <div class="panel-inner">
@@ -242,8 +260,22 @@ body.overlays-hidden #maskLayer,body.overlays-hidden #labelLayer,body.overlays-h
       <div class="section">
         <h3>Файлы</h3>
         <div class="dropzone" id="tilesDropzone">
-          <label for="tilesInput"><span>Папка с нарезкой<small>Результат <code>masterplan-tiler run</code>. Выбери саму папку, где лежат <code>tiles.json</code> и уровни.</small></span></label>
+          <label for="tilesInput"><span>Папка с нарезкой<small>Папка с <code>tiles.json</code> и уровнями либо с тайлами <code>001.jpg</code>, <code>002.jpg</code>… Нумерация по строкам, слева направо и сверху вниз.</small></span></label>
           <input id="tilesInput" type="file" webkitdirectory directory multiple />
+          <label for="tileFilesInput"><span>Выбрать файлы тайлов<small>Если выбор папки недоступен, выберите все числовые тайлы одной сетки (001.jpg, 002.jpg…). Папки уровней загружайте целиком через выбор папки.</small></span></label>
+          <input id="tileFilesInput" type="file" multiple />
+          <div class="numbered-options">
+          <label for="numberedGrid">Сетка числовых тайлов</label>
+            <select id="numberedGrid" title="Авто — минимальная сетка со стороной 1, 2, 4, 8… по максимальному индексу. Если потеряно много последних файлов, укажите сторону вручную. Для папки с несколькими уровнями оставьте Авто.">
+              <option value="0">Авто</option>
+              <option value="1">1×1</option><option value="2">2×2</option>
+              <option value="4">4×4</option><option value="8">8×8</option>
+              <option value="16">16×16</option><option value="32">32×32</option>
+              <option value="64">64×64</option><option value="128">128×128</option>
+              <option value="256">256×256</option><option value="512">512×512</option>
+            </select>
+            <small>Авто — по максимальному индексу. При большом числе пропусков в конце укажи сетку вручную.</small>
+          </div>
           <div class="file-meta" id="tilesMeta">Папка не загружена</div>
           <div class="control compact">
             <label for="lodSlider">Предел уровня</label><span class="value" id="lodValue">Авто</span>
@@ -484,6 +516,13 @@ function pickLevel(retinaSize, scale, cfg) {
  * В legacy перебираем реальные sizes, в том числе разреженные наборы.
  */
 function pickNativeLevel(screenW, screenH, cfg) {
+ if (cfg.numbered) {
+   for (const n of cfg.sizes) {
+     const g = levelGrid(n, cfg);
+     if (screenW <= g.levelW && screenH <= g.levelH) return Math.log2(n);
+   }
+   return cfg.levelMax;
+ }
 	const levels = cfg.isDzi
 		? Array.from({ length: cfg.levelMax - cfg.levelMin + 1 }, (_, i) => cfg.levelMin + i)
 		: cfg.sizes.filter((size) => size % 2 === 0).slice().sort((a, b) => a - b);
@@ -500,6 +539,10 @@ function pickNativeLevel(screenW, screenH, cfg) {
  * (число тайлов по стороне), потому что легаси-путь адресуется именно им.
  */
 function visibleLevels(level, cfg) {
+ if (cfg.numbered) {
+   const available = cfg.sizes.filter(n => n <= Math.pow(2, level));
+   return (available.length ? available : cfg.sizes.slice(0, 1)).slice(-MAX_VISIBLE_LEVELS);
+ }
 	if (cfg.isDzi) {
 		const from = Math.max(
 				cfg.baseLevel + 1,
@@ -528,6 +571,10 @@ function visibleLevels(level, cfg) {
 
 /** Геометрия одного уровня: размеры и сетка. В легаси `n` — это size. */
 function levelGrid(n, cfg) {
+ if (cfg.numbered) {
+   const size = cfg.numberedSizes.get(n);
+   return { levelW: n * size.width, levelH: n * size.height, tilesX: n, tilesY: n };
+ }
 	if (!cfg.isDzi) {
 		return {
 			levelW: n * cfg.tilePx,
@@ -555,6 +602,21 @@ function levelGrid(n, cfg) {
  * cache-bust, а математика остаётся независимой от раскладки CDN.
  */
 function tilesForViewport(cfg, levels, viewport, makeSrc) {
+ if (cfg.numbered) {
+   const out = [];
+   for (const n of levels) {
+     const x0 = Math.max(0, Math.floor(viewport.minX * n));
+     const y0 = Math.max(0, Math.floor(viewport.minY * n));
+     const x1 = Math.min(n - 1, Math.ceil(viewport.maxX * n) - 1);
+     const y1 = Math.min(n - 1, Math.ceil(viewport.maxY * n) - 1);
+     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+       const code = String(y * n + x + 1);
+       out.push({ id: `${n}_${x}_${y}`, x, y, size: n, code, src: makeSrc(n, code),
+         style: `transform: translate(${x * 100 / n}%, ${y * 100 / n}%) scaleX(${1 / n}) scaleY(${1 / n})` });
+     }
+   }
+   return out;
+ }
 	const { minX, minY, maxX, maxY } = viewport,
 		tiles = [];
 
@@ -690,7 +752,7 @@ function classifyEntry(pathString) {
 }
 
 /** Раскладывает список путей по корзинам. Ключ индекса — `<уровень>/<код>`. */
-function scanEntries(paths) {
+function scanEntries(paths, forcedSide = 0) {
 	const tiles = new Map(),
 		byLevel = new Map(),
 		extensions = new Set();
@@ -723,7 +785,9 @@ function scanEntries(paths) {
 			preview = { path: pathString, longSide: entry.longSide };
 	}
 
-	return {
+ // Coordinate tiles and descriptors always retain the original route.
+ if (!tiles.size && !descriptor) return scanNumbered(paths, forcedSide);
+ return {
 		tiles,
 		byLevel,
 		descriptor,
@@ -731,6 +795,63 @@ function scanEntries(paths) {
 		extensions,
 		levels: [...byLevel.keys()].sort((a, b) => a - b),
 	};
+}
+
+// v12: accept numeric stems and a trailing index (master_001, tile-01).
+// Exact coordinate stems are reserved for the original coordinate route.
+function numberedEntry(name) {
+ const file = String(name).trim().match(/^(.*)\.(jpe?g|png|webp|avif|bmp)$/i);
+ if (!file || /^\d+_\d+$/.test(file[1])) return null;
+ const match = file[1].match(/^(?:.*\D)?(\d+)$/);
+ return match ? { index: Number(match[1]), ext: file[2].toLowerCase() } : null;
+}
+
+// Numbered, equal-size tiles: indices are 1-based; padding is insignificant.
+function scanNumbered(paths, forcedSide = 0) {
+ const groups = new Map(), tiles = new Map(), byLevel = new Map(), extensions = new Set();
+ const result = { tiles, byLevel, extensions, descriptor: null, preview: null, levels: [], numbered: true, error: null };
+ for (const path of paths) {
+   const parts = String(path).replace(/\\/g, "/").split("/").filter(Boolean);
+   const name = parts.pop(), match = name && numberedEntry(name);
+   if (!match) continue;
+   const index = match.index;
+   if (!Number.isSafeInteger(index) || index < 1) { result.error = "Индексы должны быть целыми числами от 1."; continue; }
+   const folder = parts.join("/");
+   if (!groups.has(folder)) groups.set(folder, []);
+   groups.get(folder).push({ index, path, ext: match.ext });
+ }
+ // Root numeric previews accompanying nested levels are not tiles.
+ const folders = [...groups.keys()];
+ for (const folder of folders) {
+   if (folders.some(other => other !== folder && other.startsWith(folder ? folder + "/" : ""))) {
+     for (const item of groups.get(folder)) {
+       if (!result.preview || item.index > result.preview.longSide)
+         result.preview = { path: item.path, longSide: item.index };
+     }
+     groups.delete(folder);
+   }
+ }
+ if (forcedSide && groups.size > 1) result.error = "Ручная сетка применяется к одной папке тайлов. Для нескольких уровней выберите Авто.";
+ for (const [folder, entries] of groups) {
+   const max = entries.reduce((v, item) => Math.max(v, item.index), 0);
+   let side = 2 ** Math.ceil(Math.log2(Math.sqrt(max)));
+   const parent = Number(folder.split("/").pop());
+   // A pyramid's power-of-two directories explicitly name its grids.
+   if (groups.size > 1 && isPow2(parent) && parent >= side) side = parent;
+   if (forcedSide) side = forcedSide;
+   if (max > side * side) result.error = `Индекс ${max} не помещается в сетку ${side}×${side}.`;
+   if (side > 512) result.error = "Сетка числовых тайлов превышает поддерживаемые 512×512. Проверьте имена файлов.";
+   if (byLevel.has(side)) result.error = `Несколько папок определены как ${side}×${side}. Загрузите нужную папку отдельно.`;
+   byLevel.set(side, entries.length);
+   for (const item of entries) {
+     const key = `${side}/${item.index}`;
+     if (tiles.has(key)) result.error = `Повторяющийся индекс: ${key} (включая имена с ведущими нулями).`;
+     tiles.set(key, item.path);
+     extensions.add(item.ext);
+   }
+ }
+ result.levels = [...byLevel.keys()].sort((a,b) => a-b);
+ return result;
 }
 
 const isPow2 = (n) => n > 0 && (n & (n - 1)) === 0;
@@ -749,6 +870,7 @@ const isPow2 = (n) => n > 0 && (n & (n - 1)) === 0;
  * на сломанном материале, для этого инструмента бесполезен.
  */
 function detectLayout(scan) {
+ if (scan.numbered) return scan.levels.length && !scan.error ? { layout: "numbered", levels: scan.levels } : null;
 	const levels = scan.levels;
 
 	if (!levels.length) return null;
@@ -778,7 +900,7 @@ function expectedTiles(cfg, TileGeometry) {
 
 		for (let y = 0; y < tilesY; y++)
 			for (let x = 0; x < tilesX; x++)
-				expected.add(`${n}/${cfg.isDzi ? `${x}_${y}` : `${y}_${x}`}`);
+				expected.add(`${n}/${cfg.numbered ? y * tilesX + x + 1 : cfg.isDzi ? `${x}_${y}` : `${y}_${x}`}`);
 	}
 
 	return expected;
@@ -935,11 +1057,13 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 	/* ------------------------------------------------------------ сообщения */
 
 	const MESSAGE_TEXT = {
-		"tiles-none": (n) => `Папка с нарезкой не загружена.`,
+		"tiles-numbered": () => `Числовые тайлы: построчная нумерация от 1. Авто выбирает минимальную сетку со стороной — степенью двойки по максимальному индексу; если потерян большой хвост, задайте сетку вручную.`,
+        "tiles-numbered-error": () => `Не удалось загрузить числовые тайлы.`,
+        "tiles-none": (n) => `Папка с нарезкой не загружена.`,
 		"tiles-no-descriptor": () =>
 			`Нет tiles.json. Раскладка выведена по именам файлов, размеры измерены по краевым тайлам.`,
 		"tiles-not-recognized": () =>
-			`Раскладка не распознана. Ожидается либо tiles.json, либо каталоги-степени двойки с файлами <строка>_<столбец>.`,
+			`Раскладка не распознана. Ожидается либо tiles.json, либо каталоги-степени двойки с файлами <строка>_<столбец>, либо числовые тайлы 001, 002… .`,
 		"tiles-hole": (n) => `Не хватает тайлов: ${n}. Движок их адресует, а файлов нет — на стенде это 404.`,
 		"tiles-extra": (n) => `Лишних файлов тайлов: ${n}. Движок их не адресует.`,
 		"tiles-level-gap": (n) => `Пропущено уровней пирамиды: ${n}.`,
@@ -1062,22 +1186,61 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 			.split("/")
 			.filter(Boolean);
 
-	function measureImage(file) {
-		return new Promise((resolve) => {
-			const url = URL.createObjectURL(file),
-				img = new Image();
-
-			img.onload = () => {
-				URL.revokeObjectURL(url);
-				resolve({ width: img.naturalWidth || 0, height: img.naturalHeight || 0 });
-			};
-			img.onerror = () => {
-				URL.revokeObjectURL(url);
-				resolve(null);
-			};
-			img.src = url;
-		});
-	}
+ // v13: read dimensions without decoding a full bitmap where possible.
+ const imageSizes = new WeakMap();
+ async function imageHeaderSize(file) {
+  const buffer = await file.slice(0, 262144).arrayBuffer();
+  const v = new DataView(buffer), n = v.byteLength;
+  const tag = (i) => String.fromCharCode(...new Uint8Array(buffer, i, 4));
+  if(n >= 24 && v.getUint32(0) === 0x89504e47 && v.getUint32(4) === 0x0d0a1a0a && tag(12)==='IHDR')
+   return {width:v.getUint32(16),height:v.getUint32(20)};
+  if(n >= 30 && tag(0)==='RIFF' && tag(8)==='WEBP') {
+   const type=tag(12);
+   if(type==='VP8X' && (v.getUint8(20)&8)) return null; // EXIF orientation
+   if(type==='VP8X') return {width:1+v.getUint8(24)+(v.getUint8(25)<<8)+(v.getUint8(26)<<16),height:1+v.getUint8(27)+(v.getUint8(28)<<8)+(v.getUint8(29)<<16)};
+   if(type==='VP8 ' && v.getUint8(23)===0x9d && v.getUint8(24)===0x01 && v.getUint8(25)===0x2a)
+    return {width:v.getUint16(26,true)&16383,height:v.getUint16(28,true)&16383};
+   if(type==='VP8L' && v.getUint8(20)===0x2f) {
+    const bits=v.getUint32(21,true); return {width:(bits&16383)+1,height:((bits>>>14)&16383)+1};
+   }
+  }
+  if(n>4 && v.getUint16(0)===0xffd8) {
+   let p=2;
+   while(p+4<=n) {
+    if(v.getUint8(p++)!==255) return null;
+    while(p<n && v.getUint8(p)===255) p++;
+    if(p>=n) break;
+    const marker=v.getUint8(p++);
+    if(marker===0xda || marker===0xd9) break;
+    const len=v.getUint16(p);
+    if(len<2 || p+len>n) break;
+    // Let the browser apply EXIF orientation to natural dimensions.
+    if(marker===0xe1) return null;
+    if([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker) && len>=7)
+     return {height:v.getUint16(p+3),width:v.getUint16(p+5)};
+    p+=len;
+   }
+  }
+  return null;
+ }
+ function measureImage(file) {
+  if(!file) return Promise.resolve(null);
+  if(imageSizes.has(file)) return imageSizes.get(file);
+  const pending=(async()=>{
+   try { const size=await imageHeaderSize(file); if(size && size.width>0 && size.height>0) return size; } catch {}
+   return new Promise(resolve=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    let timer;
+    const done=size=>{clearTimeout(timer);img.onload=img.onerror=null;img.removeAttribute('src');URL.revokeObjectURL(url);resolve(size);};
+    timer=setTimeout(()=>done(null),15000);
+    img.onload=()=>done({width:img.naturalWidth,height:img.naturalHeight});
+    img.onerror=()=>done(null);
+    img.src=url;
+   });
+  })();
+  imageSizes.set(file,pending);
+  return pending;
+ }
 
 	/**
 	 * Файлы папки по корзинам. Разбор путей и вывод раскладки живут в
@@ -1093,12 +1256,13 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 			if (parts.length) byPath.set(parts.join("/"), file);
 		}
 
-		const scan = CheckerLayout.scanEntries([...byPath.keys()]),
+		const scan = CheckerLayout.scanEntries([...byPath.keys()], Number($("numberedGrid").value)),
 			index = new Map();
 
 		for (const [key, filePath] of scan.tiles) index.set(key, byPath.get(filePath));
 
 		return {
+            numbered: scan.numbered, error: scan.error,
 			index,
 			byLevel: scan.byLevel,
 			levels: scan.levels,
@@ -1144,7 +1308,23 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 		};
 	}
 
-	async function handleTilesFolder(files) {
+ let lastTilesFiles = [];
+ async function handleTilesFolder(files) {
+        lastTilesFiles = files;
+        $("numberedGrid").disabled = true;
+        els.tilesInput.disabled = $("tileFilesInput").disabled = els.clearAllBtn.disabled = true;
+        els.tilesMeta.textContent = "Загрузка и проверка тайлов…";
+        try { await new Promise(resolve => setTimeout(resolve, 0)); await loadTilesFolder(files); }
+        catch (err) {
+          state.tiles.cfg = null;
+          note("error", "tiles-numbered-error", { detail: err.message });
+          els.tilesMeta.textContent = "Ошибка загрузки: " + err.message;
+          revalidate();
+        } finally { $("numberedGrid").disabled = false;
+          els.tilesInput.disabled = $("tileFilesInput").disabled = els.clearAllBtn.disabled = false;
+        }
+ }
+ async function loadTilesFolder(files) {
 		resetTiles();
 
 		state.loadNotes = [];
@@ -1157,6 +1337,7 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 		}
 
 		const scan = scanFolder(files);
+        if (scan.error) throw new Error(scan.error);
 
 		state.tiles.index = scan.index;
 		state.tiles.ext = scan.ext || "webp";
@@ -1192,7 +1373,10 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 
 		if (!descriptor && !detected) {
 			note("error", "tiles-not-recognized");
-			els.tilesMeta.textContent = `${files.length} файлов, раскладка не распознана`;
+			const examples = files.slice(0, 5).map(f => f.name).join("; ");
+            const detail = `Получено файлов: ${files.length}; распознано тайлов: ${scan.index.size}.\nОжидаются 001.jpg, 01.png, master_001.jpg (также JPEG, WebP, AVIF, BMP) либо прежние координатные тайлы в папках уровней.\nПримеры полученных имён: ${examples || "нет"}.`;
+            note("error", "tiles-not-recognized", { detail });
+            els.tilesMeta.textContent = `Раскладка не распознана.\n${detail}`;
 			revalidate();
 
 			return;
@@ -1206,7 +1390,35 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 			state.tiles.imageH = descriptor.height || 0;
 
 			if (descriptor.format) state.tiles.ext = descriptor.format;
-		} else {
+        } else if (detected.layout === "numbered") {
+            state.tiles.layout = "numbered";
+            const sizes = new Map();
+            const entries = [...scan.index];
+            // Decode in small batches; missing index 1 does not prevent measurement.
+            for (let i = 0; i < entries.length; i += 2) {
+                els.tilesMeta.textContent = `Проверка размеров тайлов: ${i}/${entries.length}…`;
+                if(i % 16 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+                const batch = entries.slice(i, i + 2);
+                const measured = await Promise.all(batch.map(([,file]) => measureImage(file)));
+                for (let j = 0; j < batch.length; j++) {
+                    const [key, file] = batch[j], size = measured[j], n = Number(key.split("/")[0]);
+                    if (!size || !size.width || !size.height) throw new Error(`Не читается изображение ${file.name}.`);
+                    const prior = sizes.get(n);
+                    if (prior && (prior.width !== size.width || prior.height !== size.height))
+                        throw new Error(`Разные размеры тайлов на уровне ${n}: ${file.name}. Ожидаются одинаковые полные тайлы.`);
+                    sizes.set(n, size);
+                }
+            }
+            const top = scan.levels[scan.levels.length - 1], size = sizes.get(top);
+            for (const measured of sizes.values())
+                if (Math.abs(measured.width / measured.height - size.width / size.height) > 0.01)
+                    throw new Error("Уровни числовых тайлов имеют разные пропорции.");
+            state.tiles.numberedSizes = sizes;
+            state.tiles.tilePx = size.width;
+            state.tiles.imageW = top * size.width;
+            state.tiles.imageH = top * size.height;
+            note("info", "tiles-numbered");
+        } else {
 			state.tiles.layout = detected.layout;
 			note("warning", "tiles-no-descriptor");
 
@@ -1247,12 +1459,12 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 
 	function describeTiles(fileCount) {
 		const t = state.tiles,
-			layout = t.layout === "dzi" ? "DZI" : "легаси-квадрат",
+			layout = t.layout === "numbered" ? `числовые тайлы · сетки ${t.levels.map(n => `${n}×${n}`).join(", ")}` : t.layout === "dzi" ? "DZI" : "легаси-квадрат",
 			source = t.descriptor ? "tiles.json" : "выведена по файлам";
 
 		return [
 			`${fileCount} файлов · ${layout} (${source})`,
-			`мастер ${t.imageW}×${t.imageH} · тайл ${t.tilePx} · ${t.ext || "формат не определён"}`,
+			`мастер ${t.imageW}×${t.imageH} · тайл ${t.tilePx}${t.layout === "numbered" ? "×" + t.numberedSizes.get(t.levels[t.levels.length - 1]).height : ""} · ${t.ext || "формат не определён"}`,
 			`уровни: ${t.levels.join(", ") || "—"}`,
 			t.preview
 				? `превью ${t.preview.width}×${t.preview.height}`
@@ -1270,6 +1482,12 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 		const t = state.tiles,
 			previewSize = t.preview ? Math.max(t.preview.width, t.preview.height) : 0;
 
+        if (t.layout === "numbered") return {
+            numbered: true, isDzi: false, numberedSizes: t.numberedSizes,
+            sizes: t.levels, tilePx: t.tilePx, overlap: 0,
+            width: t.imageW, height: t.imageH, nativeWidth: t.imageW,
+            levelMin: Math.log2(t.levels[0]), levelMax: Math.log2(t.levels[t.levels.length - 1]), baseLevel: -1,
+        };
 		if (t.layout === "legacy-square")
 			return TileGeometry.resolveTiles({
 				resolution: t.tilePx,
@@ -1313,6 +1531,9 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 				height: state.mask.viewBox.height,
 				source: "viewBox маски",
 			};
+        } else if (t.layout === "numbered") {
+            const scale = 2048 / Math.max(t.imageW, t.imageH);
+            state.canvas = { width: t.imageW * scale, height: t.imageH * scale, source: "пропорции числовых тайлов" };
 		} else {
 			state.canvas = { width: 2048, height: 2048, source: "запасное значение" };
 		}
@@ -3146,6 +3367,7 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 
 		return {
 			generatedBy: "master-checker",
+            version: 13,
 			tiles: {
 				layout: t.layout,
 				descriptor: t.descriptor ? "tiles.json" : "выведена по файлам",
@@ -3279,9 +3501,13 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 		});
 	}
 
+ $("numberedGrid").addEventListener("change", () => {
+     if (lastTilesFiles.length) handleTilesFolder(lastTilesFiles);
+ });
 	els.tilesInput.addEventListener("change", (e) =>
 		handleTilesFolder(Array.from(e.target.files || [])),
 	);
+	$("tileFilesInput").addEventListener("change", e => handleTilesFolder(Array.from(e.target.files || [])));
 	els.maskInput.addEventListener("change", (e) => handleMask(e.target.files[0] || null));
 	els.coordsInput.addEventListener("change", (e) => handleCoords(e.target.files[0] || null));
 
@@ -3433,6 +3659,10 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 		state.camera.scale = 0;
 
 		els.tilesInput.value = "";
+        $("tileFilesInput").value = "";
+        lastTilesFiles = [];
+        lastTilesFiles = [];
+        $("numberedGrid").value = "0";
 		els.maskInput.value = "";
 		els.coordsInput.value = "";
 		els.edgeJsonInput.value = "";
@@ -3552,32 +3782,53 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 
 	/* --------------------------------------------------------- мышь и клавиши */
 
-	els.viewport.addEventListener("mousedown", (e) => {
-		if (e.button !== 0) return;
-
-		state.drag = { x: e.clientX, y: e.clientY, camX: state.camera.x, camY: state.camera.y };
-		state.dragMoved = false;
-	});
-
-	window.addEventListener("mousemove", (e) => {
-		if (!state.drag) return;
-
-		const dx = e.clientX - state.drag.x,
-			dy = e.clientY - state.drag.y;
-
-		if (Math.abs(dx) > 3 || Math.abs(dy) > 3) state.dragMoved = true;
-
-		state.camera.x = state.drag.camX + dx;
-		state.camera.y = state.drag.camY + dy;
-
-		applyCamera();
-	});
-
-	window.addEventListener("mouseup", () => {
-		state.drag = null;
-
-		setTimeout(() => (state.dragMoved = false), 0);
-	});
+ // Unified mouse, pen and touchscreen navigation (v13).
+ const pointers = new Map();
+ let gesture = null, suppressClickUntil = 0;
+ function gesturePoints() {
+  const pts=Array.from(pointers.values()).slice(0,2);
+  if(!pts.length) return null;
+  return {x:pts.reduce((s,p)=>s+p.x,0)/pts.length,y:pts.reduce((s,p)=>s+p.y,0)/pts.length,
+   distance:pts.length===2?Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y):0};
+ }
+ function rebaseGesture() {
+  const p=gesturePoints();
+  gesture=p?{...p,camX:state.camera.x,camY:state.camera.y,scale:state.camera.scale}:null;
+ }
+ els.viewport.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  if(!pointers.size) {state.dragMoved=false;suppressClickUntil=0;}
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  // Capture at the original target so taps still reach the SVG unit.
+  try {e.target.setPointerCapture(e.pointerId);} catch {}
+  if(pointers.size>1) state.dragMoved=true;
+  rebaseGesture();
+ });
+ window.addEventListener('pointermove',e=>{
+  if(!pointers.has(e.pointerId) || !gesture) return;
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const p=gesturePoints(),dx=p.x-gesture.x,dy=p.y-gesture.y;
+  if(Math.hypot(dx,dy)>4 || pointers.size>1) state.dragMoved=true;
+  const limits=state.controls.viewMode==='site'?siteScaleLimits():{min:coverScale()*0.05,max:coverScale()*4096};
+  const scale=gesture.distance>0?clamp(gesture.scale*p.distance/gesture.distance,limits.min,limits.max):gesture.scale;
+  const rect=els.viewport.getBoundingClientRect(),px=gesture.x-rect.left-rect.width/2,py=gesture.y-rect.top-rect.height/2;
+  state.camera.x=px+dx-(px-gesture.camX)*scale/gesture.scale;
+  state.camera.y=py+dy-(py-gesture.camY)*scale/gesture.scale;
+  state.camera.scale=scale;
+  applyCamera();
+ },{passive:true});
+ function endPointer(e) {
+  if(!pointers.delete(e.pointerId)) return;
+  if(state.dragMoved || e.type==='pointercancel') suppressClickUntil=Date.now()+500;
+  rebaseGesture();
+ }
+ window.addEventListener('pointerup',endPointer);
+ window.addEventListener('pointercancel',endPointer);
+ els.viewport.addEventListener('lostpointercapture',endPointer);
+ window.addEventListener('blur',()=>{pointers.clear();gesture=null;state.dragMoved=false;});
+ els.viewport.addEventListener('click',e=>{
+  if(Date.now()<suppressClickUntil) {e.preventDefault();e.stopImmediatePropagation();}
+ },true);
 
 	els.viewport.addEventListener(
 		"wheel",
@@ -3730,7 +3981,7 @@ return { classifyEntry, scanEntries, detectLayout, expectedTiles };
 <path d="M88.3742 40.4261H89.7016C89.8469 40.4261 89.9685 40.4176 90.0664 40.4008C90.1644 40.3839 90.2471 40.3585 90.3147 40.3248C90.3856 40.2876 90.4481 40.2386 90.5022 40.1778C90.5596 40.1137 90.6136 40.0309 90.6643 39.9296C90.715 39.8282 90.7622 39.7016 90.8062 39.5496C90.8534 39.3942 90.9109 39.1628 90.9784 38.8555H91.4901L91.3888 40.8922H86.8339V40.644C87.0434 40.5899 87.1835 40.5308 87.2545 40.4666C87.3254 40.3991 87.371 40.3045 87.3913 40.1829C87.4149 40.0613 87.4267 39.8755 87.4267 39.6256V35.243C87.4267 35.0099 87.4183 34.841 87.4014 34.7363C87.3845 34.6282 87.3558 34.5455 87.3153 34.4881C87.2781 34.4273 87.2274 34.38 87.1633 34.3462C87.0991 34.309 86.9893 34.2685 86.8339 34.2246V33.9763H88.967V34.2246C88.8184 34.2651 88.712 34.3023 88.6478 34.3361C88.587 34.3665 88.5363 34.4087 88.4958 34.4627C88.4552 34.5168 88.4248 34.5995 88.4046 34.711C88.3843 34.8224 88.3742 34.9998 88.3742 35.243V40.4261Z" fill="white"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M103.606 0.709528H0.714527V49.2905H103.606V0.709528ZM0 0V50H104.321V0H0Z" fill="white"/>
 </svg>
-</div><div class="breadcrumbs"><span>Masterplan</span><span>›</span><strong>Checker</strong></div><nav class="section-tabs" aria-label="Разделы">${sections.map(([id,title])=>`<button class="section-tab" type="button" data-section="${id}" aria-expanded="false" aria-controls="${id==='tree'?'rightPanel':id==='checks'?'checksPanel':'leftPanel'}">${svg(id)}<span>${title}</span></button>`).join('')}</nav>`;
+</div><div class="breadcrumbs"><span>Masterplan</span><span>›</span><strong>Checker v13</strong></div><nav class="section-tabs" aria-label="Разделы">${sections.map(([id,title])=>`<button class="section-tab" type="button" data-section="${id}" aria-expanded="false" aria-controls="${id==='tree'?'rightPanel':id==='checks'?'checksPanel':'leftPanel'}">${svg(id)}<span>${title}</span></button>`).join('')}</nav>`;
  document.body.append(header);
  const left=document.querySelector('.panel.left'); left.id='leftPanel';
  const title=document.createElement('h2'); title.className='panel-title'; left.firstElementChild.prepend(title);
